@@ -15,6 +15,8 @@ export default function VideoPage() {
     const [url, setUrl] = useState("https://www.youtube.com/watch?v=z4K2F_OALPQ");
     const [subtitles, setSubtitles] = useState<GetSubtitlesResponse>([]);
     const [subtitle, setSubtitle] = useState("");
+
+    
     
     const playerRef = useRef<YouTubePlayer>(null);
 

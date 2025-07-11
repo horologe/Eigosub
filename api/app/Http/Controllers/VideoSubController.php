@@ -3,14 +3,22 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class VideoSubController extends Controller
 {
     public function getSubtitles(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'videoId' => 'required|string'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'result' => 'failed',
+                'error' => $validator->errors()
+            ], 422);
+        }
 
         $videoId = $request->input('videoId');
         
@@ -20,6 +28,7 @@ class VideoSubController extends Controller
             
             if ($output === null) {
                 return response()->json([
+                    'result' => 'failed',
                     'error' => 'Failed to get subtitles'
                 ], 500);
             
@@ -27,10 +36,14 @@ class VideoSubController extends Controller
 
             $subtitles = json_decode($output, true);
             
-            return response()->json($subtitles);
+            return response()->json([
+                'result' => 'success',
+                ...$subtitles
+            ]);
 
         } catch (\Exception $e) {
             return response()->json([
+                'result' => 'failed',
                 'error' => $e->getMessage()
             ], 500);
         }
