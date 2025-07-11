@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { login as loginApi } from "@/services/api";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 const schema = z.object({
     username: z.string().min(1).max(255),
@@ -12,6 +13,7 @@ const schema = z.object({
 
 export default function LoginPage() {
     const router = useRouter();
+    const [error, setError] = useState("");
     const {register, handleSubmit} = useForm({
         resolver: zodResolver(schema),
     });
@@ -21,6 +23,8 @@ export default function LoginPage() {
             if (response.result === "success") {
                 localStorage.setItem("token", response.token);
                 router.push("/");
+            } else {
+                setError(response?.error ?? "Unknown error");
             }
         });
     }
@@ -33,6 +37,7 @@ export default function LoginPage() {
                 <input type="password" placeholder="Password" {...register("password")} />
                 <button type="submit">Login</button>
             </form>
+            {error && <p>{error}</p>}
         </div>
     );
 }

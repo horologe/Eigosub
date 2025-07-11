@@ -1,5 +1,5 @@
 import axios from "axios";
-import { CommonResponse, GetSubtitlesResponse, LoginResponse, MeResponse, RegisterResponse } from "@/model/api";
+import { CommonResponse, Flashcard, FlashcardResponse, FlashcardsResponse, GetSubtitlesResponse, LoginResponse, MeResponse, RegisterResponse } from "@/model/api";
 
 const api = axios.create({
     baseURL: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`,
@@ -61,5 +61,15 @@ export const me = async (): Promise<MeResponse> => {
 
 export const getCsrfCookie = async (): Promise<CommonResponse> => {
     const response = await api.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/sanctum/csrf-cookie`);
+    return response.data;
+};
+
+export const getFlashcards = async (): Promise<FlashcardsResponse> => {
+    const response = await api.get(`/flashcards`);
+    return response.data;
+};
+
+export const createFlashcard = async (content: string): Promise<FlashcardResponse> => {
+    const response = await api.post(`/flashcards`, { content });
     return response.data;
 };

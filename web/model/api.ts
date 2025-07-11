@@ -27,3 +27,16 @@ export type MeResponse = {
         username: string;
     };
 } & CommonResponse;
+
+export type Flashcard = {
+    id: number;
+    content: string;
+};
+
+export type FlashcardResponse = {
+    flashcard: Flashcard;
+} & CommonResponse;
+
+export type FlashcarsdResponse = {
+    flashcards: Flashcard[];
+} & CommonResponse;

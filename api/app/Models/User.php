@@ -33,6 +33,11 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    function flashcards()
+    {
+        return $this->hasMany(Flashcard::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *
