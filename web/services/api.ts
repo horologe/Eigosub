@@ -34,8 +34,9 @@ api.interceptors.response.use((response) => {
 export const getSubtitles = async (videoId: string): Promise<GetSubtitlesResponse> => {
     const response = await api.get(`/get-subtitles`, {
         params: { videoId },
+        timeout: 60000,
     });
-    return response.data[0];
+    return response.data;
 };
 
 export const register = async (username: string, password: string): Promise<RegisterResponse> => {

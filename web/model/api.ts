@@ -3,12 +3,19 @@ export type CommonResponse = {
     error?: string;
 }
 
+export type Subtitle = {
+    text: {
+        content: string,
+        meaning: string
+    }[],
+    start: number,
+    duration: number
+}
+
 export type GetSubtitlesResponse = 
     {
-        text: string,
-        start: number,
-        duration: number
-    }[] & CommonResponse;
+        subtitles: Subtitle[]
+    } & CommonResponse;
 
 export type RegisterResponse = {
     user: {
@@ -37,6 +44,6 @@ export type FlashcardResponse = {
     flashcard: Flashcard;
 } & CommonResponse;
 
-export type FlashcarsdResponse = {
+export type FlashcardsResponse = {
     flashcards: Flashcard[];
 } & CommonResponse;

@@ -1,6 +1,6 @@
 "use client";
 
-import { GetSubtitlesResponse } from "@/model/api";
+import { Subtitle as SubtitleType } from "@/model/api";
 import { getSubtitles } from "@/services/api";
 import { useEffect, useRef, useState } from "react";
 import YouTube, { YouTubePlayer } from "react-youtube";
@@ -13,8 +13,8 @@ function getVideoId(url: string) {
 
 export default function VideoPage() {
     const [url, setUrl] = useState("https://www.youtube.com/watch?v=z4K2F_OALPQ");
-    const [subtitles, setSubtitles] = useState<GetSubtitlesResponse>([]);
-    const [subtitle, setSubtitle] = useState("");
+    const [subtitles, setSubtitles] = useState<SubtitleType[]>([]);
+    const [subtitle, setSubtitle] = useState<SubtitleType | null>(null);
 
     
     
@@ -22,7 +22,12 @@ export default function VideoPage() {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setSubtitles(await getSubtitles(getVideoId(url)));
+        const response = await getSubtitles(getVideoId(url));
+        if (response.result === "success") {
+            setSubtitles(response.subtitles);
+        } else {
+            setSubtitles([]);
+        }
     }
 
     const onPlayerReady = (event: any) => {
@@ -34,12 +39,16 @@ export default function VideoPage() {
             if (playerRef.current) {
                 const currentTime = playerRef.current.getCurrentTime();
                 const subtitle = subtitles.find((subtitle) => subtitle.start <= currentTime && currentTime <= subtitle.start + subtitle.duration);
-                setSubtitle(subtitle?.text || "");
+                if (subtitle) {
+                    setSubtitle(subtitle);
+                } else {
+                    setSubtitle(null);
+                }
             }
         }, 50);
 
         return () => clearTimeout(id);
-    }, [playerRef.current])
+    }, [playerRef.current, subtitles])
 
     return (
         <div>
@@ -51,7 +60,7 @@ export default function VideoPage() {
 
             <YouTube videoId={getVideoId(url)} onReady={onPlayerReady}/>
 
-            <Subtitle subtitle={subtitle} />    
+            {subtitle && <Subtitle subtitle={subtitle} />}    
         </div>
     );
 }
