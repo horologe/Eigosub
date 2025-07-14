@@ -1,3 +1,5 @@
+import { DictEntry } from "./dict";
+
 export type CommonResponse = {
     result: "success" | "failed";
     error?: string;
@@ -47,3 +49,5 @@ export type FlashcardResponse = {
 export type FlashcardsResponse = {
     flashcards: Flashcard[];
 } & CommonResponse;
+
+export type GetDictResponse = {dict: DictEntry} & CommonResponse;

@@ -28,7 +28,7 @@ function getWords(subtitle: string): string[]{
 
 
 export default function Subtitle({ subtitle }: SubtitleProps) {
-    const { selectedWord, setSelectedWord } = useSelectedWordStore();
+    const { setSelectedWord } = useSelectedWordStore();
 
     return (
         <div className="w-[640px] text-center">
