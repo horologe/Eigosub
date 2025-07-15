@@ -11,9 +11,17 @@ class DictController extends Controller
 {
     public function getDict(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             "word" => "string|required"
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'result' => 'failed',
+                'error' => $validator->errors()->first()
+            ], 400);
+        }
+
         $word = $request->input("word");
         try {
             $output = shell_exec("/Users/eita/Downloads/tkrzw-dict/dict " . escapeshellarg($word));
@@ -21,9 +29,10 @@ class DictController extends Controller
             if ($output == null) {
                 $output = [];
             }
+
             return response()->json([
                 'result' => 'success',
-                'dict' => $output
+                'dict' => $output,
             ]);
         } catch (\Exception $e) {
             return response()->json([

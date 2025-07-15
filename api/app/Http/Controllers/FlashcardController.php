@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Flashcard;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class FlashcardController extends Controller
 {
@@ -57,11 +58,18 @@ class FlashcardController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Flashcard $flashcard)
-    {
+    public function destroy(Request $request, Flashcard $flashcard)
+    {   
+        if ($flashcard->user_id !== $request->user()->id) {
+            return response()->json([
+                "result" => "failed",
+                "error" => "Unauthorized",
+            ], 403);
+        }
+        
         $flashcard->delete();
         return response()->json([
             "result" => "success",
-        ], 204); 
+        ], 204);
     }
 }

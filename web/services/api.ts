@@ -75,6 +75,11 @@ export const createFlashcard = async (content: string): Promise<FlashcardRespons
     return response.data;
 };
 
+export const deleteFlashcard = async (flashcardId: number): Promise<FlashcardResponse> => {
+    const response = await api.delete(`/flashcards/${flashcardId}`);
+    return response.data;
+};
+
 export const getDict = async (word: string): Promise<GetDictResponse> => {
     const response = await api.get('/get-dict', {params: {word}});
     return response.data;

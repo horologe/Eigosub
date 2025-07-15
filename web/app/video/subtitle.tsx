@@ -37,6 +37,7 @@ export default function Subtitle({ subtitle }: SubtitleProps) {
                 const textHtml = getWords(text.content).map((word, index2) => 
                 
                     <span key={`${index1}-${index2}`} onClick={() => {
+                        if (!separators.includes(word))
                         setSelectedWord(word);
                     }} className={"text-center text-lg font-medium text-gray-900 subpixel-antialiased dark:text-white w-100 " + (separators.includes(word) ? "" :  "hover:border-primary hover:border-b-4 hover:bg-primary/40")}>
                         {word}

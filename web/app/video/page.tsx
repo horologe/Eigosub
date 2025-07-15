@@ -1,7 +1,7 @@
 "use client";
 
 import { Subtitle as SubtitleType } from "@/model/api";
-import { getDict, getSubtitles } from "@/services/api";
+import { createFlashcard, deleteFlashcard, getDict, getSubtitles } from "@/services/api";
 import { useEffect, useRef, useState } from "react";
 import YouTube, { YouTubePlayer } from "react-youtube";
 import Subtitle from "./subtitle";
@@ -20,6 +20,8 @@ export default function VideoPage() {
     const [subtitle, setSubtitle] = useState<SubtitleType | null>(null);
     const [dict, setDict] = useState<DictEntry>([]);
     const { selectedWord } = useSelectedWordStore();
+    // const { flashcards } = useFlashcardsStore();
+    
 
     useEffect(() => {
         if (selectedWord) {
@@ -61,6 +63,22 @@ export default function VideoPage() {
         return () => clearTimeout(id);
     }, [playerRef.current, subtitles])
 
+    const handleAddToFlashcard = async () => {
+        if (selectedWord) {
+            const response = await createFlashcard(selectedWord);
+            if (response.result === "success") {
+                setFlashcardId(response.flashcard.id);
+            }
+        }
+    };
+
+    const handleDeleteFromFlashcard = () => {
+        if (selectedWord && flashcardId) {
+            deleteFlashcard(flashcardId);
+            setFlashcardId(null);
+        }
+    };
+
     return (
         <div>
             <div className="flex flex-col gap-2"></div>
@@ -72,9 +90,13 @@ export default function VideoPage() {
 
             <YouTube videoId={getVideoId(url)} onReady={onPlayerReady}/>
 
+            
             <div className="h-[100px]">
                 {subtitle && <Subtitle subtitle={subtitle} />}    
             </div>
+
+
+            {selectedWord && (flashcardId ? <p className="text-sm text-blue-200 hover:underline" onClick={handleDeleteFromFlashcard}>{selectedWord}を単語帳から削除</p> : <p className="text-sm text-blue-200 hover:underline" onClick={handleAddToFlashcard}>{selectedWord}を単語帳に追加</p>)}
 
             {dict.map((word, index) => <Dict word={word} key={index} />)}
         </div>

@@ -1,6 +1,6 @@
 "use client";
 import useSWR from "swr";
-import { createFlashcard, getFlashcards } from "@/services/api";
+import { createFlashcard, deleteFlashcard, getFlashcards } from "@/services/api";
 import { Flashcard } from "@/model/api";
 import { useForm } from "react-hook-form";
 
@@ -18,7 +18,10 @@ export default function FlashcardPage() {
 
     return <div>
         {data?.flashcards.map((card: Flashcard) => (
-            <div key={card.id}>{card.content}</div>
+            <div key={card.id} className="flex items-center gap-2">
+                <p className="text-lg">{card.content}</p>
+                <button onClick={() => deleteFlashcard(card.id).then(() => mutate())} className="bg-red-500 text-white px-2 py-1 rounded-md">Delete</button>
+            </div>
         ))}
         <form onSubmit={handleSubmit(onSubmit)}>
             <input type="text" {...register("content")} />
