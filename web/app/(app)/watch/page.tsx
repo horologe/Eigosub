@@ -9,15 +9,10 @@ import { useSelectedWordStore } from "@/hooks/selected-word";
 import Dict from "./dict";
 import { DictEntry } from "@/model/dict";
 import useSWR from "swr";
-
-function getVideoId(url: string) {
-    const videoId = url.split("v=")[1];
-    return videoId;
-}
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function VideoPage() {
-    const [url, setUrl] = useState("https://www.youtube.com/watch?v=z4K2F_OALPQ");
-    
+    const videoid = useSearchParams().get("v") || "z4K2F_OALPQ";
 
     const [subtitle, setSubtitle] = useState<SubtitleType[]>([]);
     const [dict, setDict] = useState<DictEntry>([]);
@@ -25,8 +20,7 @@ export default function VideoPage() {
     const { data, mutate} = useSWR("flashcards", getFlashcards);
     const flashcardId = data?.flashcards.find((flashcard) => flashcard.content === selectedWord)?.id;
 
-
-    const [rawSubtitles, setRawSubtitles] = useState<RawSubtitle[]>([]);
+    const {data: rawSubtitles, error, isLoading} = useSWR("rawSubtitles-" + videoid, async () => (await getSubtitles(videoid)).subtitles);
     const processedSubtitles = useRef<SubtitleType[]>([]);
 
     useEffect(() => {
@@ -39,15 +33,7 @@ export default function VideoPage() {
     
     const playerRef = useRef<YouTubePlayer>(null);
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setRawSubtitles([]);
-        const response = await getSubtitles(getVideoId(url));
-        if (response.result === "success") {
-            setRawSubtitles(response.subtitles);
-
-        }
-    }
+    
 
     const onPlayerReady = (event: any) => {
         playerRef.current = event.target;
@@ -55,7 +41,7 @@ export default function VideoPage() {
 
     useEffect(() => {
         const id = setInterval(() => {
-            if (!playerRef.current) return;
+            if (!playerRef.current || !rawSubtitles) return;
             const currentTime = playerRef.current.getCurrentTime();
             
             let i = 0;
@@ -140,22 +126,17 @@ if (selectedWord && flashcardId) {
     return (
         <div>
             <div className="flex flex-col gap-2"></div>
-            <form onSubmit={handleSubmit}>
-                <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=z4K2F_OALPQ" className="dark:bg-secondary text-lg rounded-md w-lg focus:outline-4 focus:outline-secondary/80 focus:border-none h-10"/>
-                <button type="submit" className="bg-primary text-black rounded-md px-4 py-2 h-10 font-bold">Submit</button>
-            </form>
 
+            <YouTube videoId={videoid} onReady={onPlayerReady} />
 
-            <YouTube videoId={getVideoId(url)} onReady={onPlayerReady} />
-
+            {isLoading && <p>Loading...</p>}
+            {error && <p>Error</p>}
             
             <div className="h-[100px]">
                 {subtitle.map((s, i) => <Subtitle subtitle={s} key={i} />)}    
             </div>
 
-
             {selectedWord && (flashcardId ? <p className="text-sm text-blue-200 hover:underline" onClick={handleDeleteFromFlashcard}>{selectedWord}を単語帳から削除</p> : <p className="text-sm text-blue-200 hover:underline" onClick={handleAddToFlashcard}>{selectedWord}を単語帳に追加</p>)}
-
             {dict.map((word, index) => <Dict word={word} key={index} />)}
         </div>
     );
