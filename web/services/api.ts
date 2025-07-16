@@ -1,5 +1,5 @@
 import axios from "axios";
-import { CommonResponse, Flashcard, FlashcardResponse, FlashcardsResponse, GetDictResponse, GetSubtitlesResponse, LoginResponse, MeResponse, RegisterResponse } from "@/model/api";
+import { CommonResponse, Flashcard, FlashcardResponse, FlashcardsResponse, GetDictResponse, GetSubtitlesResponse, LoginResponse, MeResponse, ProcSubtitlesResponse, RawSubtitle, RegisterResponse } from "@/model/api";
 
 const api = axios.create({
     baseURL: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`,
@@ -82,5 +82,10 @@ export const deleteFlashcard = async (flashcardId: number): Promise<FlashcardRes
 
 export const getDict = async (word: string): Promise<GetDictResponse> => {
     const response = await api.get('/get-dict', {params: {word}});
+    return response.data;
+}
+
+export const procSubtitles = async (subtitles: RawSubtitle[]): Promise<ProcSubtitlesResponse> => {
+    const response = await api.post(`/proc-subtitles`, { subtitles });
     return response.data;
 }

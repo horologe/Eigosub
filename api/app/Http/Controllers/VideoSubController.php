@@ -11,8 +11,6 @@ class VideoSubController extends Controller
 {
     public function getSubtitles(Request $request)
     {
-        set_time_limit(60);
-
         $validator = Validator::make($request->all(), [
             'videoId' => 'required|string'
         ]);
@@ -45,6 +43,38 @@ class VideoSubController extends Controller
                 ], 500);
             }
 
+            return response()->json([
+                'result' => 'success',
+                'subtitles' => $subtitles[0]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'result' => 'failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function procSubtitles(Request $request)
+    {
+        set_time_limit(600);
+
+        $validator = Validator::make($request->all(), [
+            'subtitles' => 'required|array'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'result' => 'failed',
+                'error' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $subtitles = $request->input('subtitles');
+            $subtitlesJson = json_encode($subtitles);
+
+
             $apiKey = env('GEMINI_API_KEY');
             if (!$apiKey) {
                 Log::error('GEMINI_API_KEY is not set in .env file.');
@@ -60,7 +90,7 @@ class VideoSubController extends Controller
                     {
                         "content": "turn on",
                         "meaning": "点ける"
-                    }, 
+                    },
                     {
                         "content": "the light",
                         "meaning": ""
@@ -70,17 +100,13 @@ class VideoSubController extends Controller
                 "duration": 1000
             }
 EOF;
-            $response = Http::timeout(60)->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey, [
+            $response = Http::timeout(600)->post('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey, [
                 'system_instruction' => [
                     'parts' => [
                         ['text' => $prompt]
                     ]
                 ],
-                'contents' => [[
-                    'parts' => [
-                        ['text' => $output],
-                    ]
-                ]],
+                'contents' => [['parts' => [['text' => $subtitlesJson],]]],
                 'generationConfig' => [
                     'responseMimeType' => 'application/json',
                     'responseSchema' => [

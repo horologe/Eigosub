@@ -1,13 +1,14 @@
 "use client";
 
-import { Subtitle as SubtitleType } from "@/model/api";
-import { createFlashcard, deleteFlashcard, getDict, getSubtitles } from "@/services/api";
+import { RawSubtitle, Subtitle as SubtitleType } from "@/model/api";
+import { createFlashcard, deleteFlashcard, getDict, getFlashcards, getSubtitles, procSubtitles } from "@/services/api";
 import { useEffect, useRef, useState } from "react";
 import YouTube, { YouTubePlayer } from "react-youtube";
 import Subtitle from "./subtitle";
 import { useSelectedWordStore } from "@/hooks/selected-word";
 import Dict from "./dict";
 import { DictEntry } from "@/model/dict";
+import useSWR from "swr";
 
 function getVideoId(url: string) {
     const videoId = url.split("v=")[1];
@@ -16,12 +17,17 @@ function getVideoId(url: string) {
 
 export default function VideoPage() {
     const [url, setUrl] = useState("https://www.youtube.com/watch?v=z4K2F_OALPQ");
-    const [subtitles, setSubtitles] = useState<SubtitleType[]>([]);
-    const [subtitle, setSubtitle] = useState<SubtitleType | null>(null);
+    
+
+    const [subtitle, setSubtitle] = useState<SubtitleType[]>([]);
     const [dict, setDict] = useState<DictEntry>([]);
     const { selectedWord } = useSelectedWordStore();
-    // const { flashcards } = useFlashcardsStore();
-    
+    const { data, mutate} = useSWR("flashcards", getFlashcards);
+    const flashcardId = data?.flashcards.find((flashcard) => flashcard.content === selectedWord)?.id;
+
+
+    const [rawSubtitles, setRawSubtitles] = useState<RawSubtitle[]>([]);
+    const processedSubtitles = useRef<SubtitleType[]>([]);
 
     useEffect(() => {
         if (selectedWord) {
@@ -35,11 +41,11 @@ export default function VideoPage() {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setRawSubtitles([]);
         const response = await getSubtitles(getVideoId(url));
         if (response.result === "success") {
-            setSubtitles(response.subtitles);
-        } else {
-            setSubtitles([]);
+            setRawSubtitles(response.subtitles);
+
         }
     }
 
@@ -49,33 +55,85 @@ export default function VideoPage() {
 
     useEffect(() => {
         const id = setInterval(() => {
-            if (playerRef.current) {
-                const currentTime = playerRef.current.getCurrentTime();
-                const subtitle = subtitles.find((subtitle) => subtitle.start <= currentTime && currentTime <= subtitle.start + subtitle.duration);
-                if (subtitle) {
-                    setSubtitle(subtitle);
-                } else {
-                    setSubtitle(null);
+            if (!playerRef.current) return;
+            const currentTime = playerRef.current.getCurrentTime();
+            
+            let i = 0;
+            let res = [];
+            for (; i < rawSubtitles.length; i++) {
+                const subtitle = rawSubtitles[i];
+                if (subtitle.start <= currentTime && currentTime <= subtitle.start + subtitle.duration) {
+                    if (processedSubtitles.current[i]) {
+                        res.push(processedSubtitles.current[i]);
+                    } else {
+                        res.push({
+                            text: [{
+                                content: rawSubtitles[i].text,
+                                meaning: ""
+                            }],
+                            start: rawSubtitles[i].start,
+                            duration: rawSubtitles[i].duration,
+                        });
+                    }
+                } else if (currentTime < rawSubtitles[i].start) {
+                    break;
                 }
             }
+            setSubtitle(res);
+            
+            // 10秒以内に処理されていない字幕があるかどうか
+            let flag = false;
+            for (let j = i; j < rawSubtitles.length && rawSubtitles[j].start < currentTime + 30; j++) {
+                if (!processedSubtitles.current[j]) {
+                    flag = true;
+                    break;
+                }
+            }
+
+            if (!flag) return;
+
+            // 30秒以内の字幕を処理
+            let q = [];
+            let subs = [];
+            for (let j = i; j < rawSubtitles.length && rawSubtitles[j].start < currentTime + 60; j++) {
+                if (!processedSubtitles.current[j]) {
+                    q.push(j);
+                     subs.push(rawSubtitles[j]);
+                     // 一時的にprocessedSubtitlesをrawSubtitlesにする
+                     processedSubtitles.current[j] = {
+                        text: [{
+                            content: rawSubtitles[j].text,
+                            meaning: ""
+                        }],
+                        start: rawSubtitles[j].start,
+                        duration: rawSubtitles[j].duration
+                     };
+                }
+            }
+
+            if (flag) {
+                procSubtitles(subs).then((response) => {
+                    response.subtitles.map((s, i) => {
+                        processedSubtitles.current[q[i]] = s;
+                    })
+                });
+            }
         }, 50);
-
-        return () => clearTimeout(id);
-    }, [playerRef.current, subtitles])
-
+        return ()=> clearTimeout(id);
+    }, [playerRef.current, rawSubtitles])
     const handleAddToFlashcard = async () => {
         if (selectedWord) {
-            const response = await createFlashcard(selectedWord);
+        const response = await createFlashcard(selectedWord);
             if (response.result === "success") {
-                setFlashcardId(response.flashcard.id);
-            }
+            mutate();
         }
+    }
     };
 
-    const handleDeleteFromFlashcard = () => {
-        if (selectedWord && flashcardId) {
-            deleteFlashcard(flashcardId);
-            setFlashcardId(null);
+   const handleDeleteFromFlashcard = () => {
+if (selectedWord && flashcardId) {
+         deleteFlashcard(flashcardId);
+            mutate();
         }
     };
 
@@ -88,11 +146,11 @@ export default function VideoPage() {
             </form>
 
 
-            <YouTube videoId={getVideoId(url)} onReady={onPlayerReady}/>
+            <YouTube videoId={getVideoId(url)} onReady={onPlayerReady} />
 
             
             <div className="h-[100px]">
-                {subtitle && <Subtitle subtitle={subtitle} />}    
+                {subtitle.map((s, i) => <Subtitle subtitle={s} key={i} />)}    
             </div>
 
 

@@ -5,6 +5,12 @@ export type CommonResponse = {
     error?: string;
 }
 
+export type RawSubtitle = {
+    text: string,
+    start: number,
+    duration: number
+}
+
 export type Subtitle = {
     text: {
         content: string,
@@ -16,7 +22,7 @@ export type Subtitle = {
 
 export type GetSubtitlesResponse = 
     {
-        subtitles: Subtitle[]
+        subtitles: RawSubtitle[]
     } & CommonResponse;
 
 export type RegisterResponse = {
@@ -48,6 +54,10 @@ export type FlashcardResponse = {
 
 export type FlashcardsResponse = {
     flashcards: Flashcard[];
+} & CommonResponse;
+
+export type ProcSubtitlesResponse = {
+    subtitles: Subtitle[]
 } & CommonResponse;
 
 export type GetDictResponse = {dict: DictEntry} & CommonResponse;
