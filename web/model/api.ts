@@ -3,7 +3,12 @@ import { DictEntry } from "./dict";
 export type CommonResponse = {
     result: "success" | "failed";
     error?: string;
-}
+};
+
+export type LazyResponse = {
+    status: "completed" | "failed" | "pending";
+    error?: string;
+};
 
 export type RawSubtitle = {
     text: string,
@@ -58,6 +63,6 @@ export type FlashcardsResponse = {
 
 export type ProcSubtitlesResponse = {
     subtitles: Subtitle[]
-} & CommonResponse;
+} & LazyResponse;
 
 export type GetDictResponse = {dict: DictEntry} & CommonResponse;

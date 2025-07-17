@@ -85,7 +85,12 @@ export const getDict = async (word: string): Promise<GetDictResponse> => {
     return response.data;
 }
 
-export const procSubtitles = async (subtitles: RawSubtitle[]): Promise<ProcSubtitlesResponse> => {
+export const procSubtitles = async (subtitles: RawSubtitle[]): Promise<{result: string, job_id: number}> => {
     const response = await api.post(`/proc-subtitles`, { subtitles });
+    return response.data;
+}
+
+export const getProcessedSubtitle = async (jobId: number): Promise<ProcSubtitlesResponse> => {
+    const response = await api.get(`/proc-subtitles/${jobId}`);
     return response.data;
 }

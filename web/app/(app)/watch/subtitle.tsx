@@ -31,7 +31,7 @@ export default function Subtitle({ subtitle }: SubtitleProps) {
     const { setSelectedWord } = useSelectedWordStore();
 
     return (
-        <div className="w-[640px] text-center">
+        <div className="w-[640px] text-center mt-2">
             {subtitle.text.map((text, index1) => {
                 const isMeaning = text.meaning !== "";
                 const textHtml = getWords(text.content).map((word, index2) => 

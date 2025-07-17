@@ -1,7 +1,7 @@
 "use client";
 
 import { RawSubtitle, Subtitle as SubtitleType } from "@/model/api";
-import { createFlashcard, deleteFlashcard, getDict, getFlashcards, getSubtitles, procSubtitles } from "@/services/api";
+import { createFlashcard, deleteFlashcard, getDict, getFlashcards, getSubtitles, procSubtitles, getProcessedSubtitle } from "@/services/api";
 import { useEffect, useRef, useState } from "react";
 import YouTube, { YouTubePlayer } from "react-youtube";
 import Subtitle from "./subtitle";
@@ -15,35 +15,82 @@ export default function VideoPage() {
     const videoid = useSearchParams().get("v") || "z4K2F_OALPQ";
 
     const [subtitle, setSubtitle] = useState<SubtitleType[]>([]);
-    const [dict, setDict] = useState<DictEntry>([]);
     const { selectedWord } = useSelectedWordStore();
-    const { data, mutate} = useSWR("flashcards", getFlashcards);
-    const flashcardId = data?.flashcards.find((flashcard) => flashcard.content === selectedWord)?.id;
+    const { data: dict, error: dictError } = useSWR("dict-" + selectedWord, () => getDict(selectedWord).then((response) => response.dict));
+    const { data: flashcards, mutate: mutateFlashcards } = useSWR("flashcards", getFlashcards);
+    const flashcardId = flashcards?.flashcards.find((flashcard) => flashcard.content === selectedWord)?.id;
 
-    const {data: rawSubtitles, error, isLoading} = useSWR("rawSubtitles-" + videoid, async () => (await getSubtitles(videoid)).subtitles);
+    const { data: rawSubtitles, error, isLoading } = useSWR("rawSubtitles-" + videoid, async () => (await getSubtitles(videoid)).subtitles);
     const processedSubtitles = useRef<SubtitleType[]>([]);
+    const [processingJobId, setProcessingJobId] = useState<number | null>(null);
+    const pollingIndexes = useRef<number[]>([]);
 
-    useEffect(() => {
-        if (selectedWord) {
-            getDict(selectedWord).then((response) => {
-                setDict(response.dict);
-            });
-        }
-    }, [selectedWord]);
-    
     const playerRef = useRef<YouTubePlayer>(null);
-
-    
 
     const onPlayerReady = (event: any) => {
         playerRef.current = event.target;
     }
 
     useEffect(() => {
+        if (processingJobId) {
+            const id = setInterval(async () => {
+                try {
+                    const response = await getProcessedSubtitle(processingJobId);
+                    if (response.status === "completed") {
+                        const newSubtitles = response.subtitles;
+                        if (newSubtitles) {
+                            const updatedProcessedSubtitles = [...processedSubtitles.current];
+                            newSubtitles.forEach((s, i) => {
+                                const originalIndex = pollingIndexes.current[i];
+                                if (originalIndex !== undefined) {
+                                    updatedProcessedSubtitles[originalIndex] = s;
+                                }
+                            });
+                            processedSubtitles.current = updatedProcessedSubtitles;
+                        }
+                        clearInterval(id);
+                        setProcessingJobId(null);
+                        pollingIndexes.current = [];
+                    } else if (response.status === "failed") {
+                        console.error("Subtitle processing failed:", response.error);
+                        // Handle failed job, maybe revert the temporary subtitles
+                        const updatedProcessedSubtitles = [...processedSubtitles.current];
+                        pollingIndexes.current.forEach(index => {
+                            // Revert or mark as failed
+                             updatedProcessedSubtitles[index] = {
+                                text: [{
+                                    content: rawSubtitles![index].text,
+                                    meaning: ""
+                                }],
+                                start: rawSubtitles![index].start,
+                                duration: rawSubtitles![index].duration
+                             };
+                        });
+                        processedSubtitles.current = updatedProcessedSubtitles;
+
+                        clearInterval(id);
+                        setProcessingJobId(null);
+                        pollingIndexes.current = [];
+                    }
+                } catch (error) {
+                    console.error("Error polling for processed subtitles:", error);
+                    clearInterval(id);
+                    setProcessingJobId(null);
+                }
+            }, 3000);
+
+            return () => {
+                clearInterval(id);
+                setProcessingJobId(null);
+            };
+        }
+    }, [processingJobId, rawSubtitles]);
+
+    useEffect(() => {
         const id = setInterval(() => {
             if (!playerRef.current || !rawSubtitles) return;
             const currentTime = playerRef.current.getCurrentTime();
-            
+
             let i = 0;
             let res = [];
             for (; i < rawSubtitles.length; i++) {
@@ -66,8 +113,7 @@ export default function VideoPage() {
                 }
             }
             setSubtitle(res);
-            
-            // 10秒以内に処理されていない字幕があるかどうか
+
             let flag = false;
             for (let j = i; j < rawSubtitles.length && rawSubtitles[j].start < currentTime + 30; j++) {
                 if (!processedSubtitles.current[j]) {
@@ -78,48 +124,49 @@ export default function VideoPage() {
 
             if (!flag) return;
 
-            // 30秒以内の字幕を処理
-            let q = [];
-            let subs = [];
+            let subs_to_process = [];
+            let indexes_to_process = [];
             for (let j = i; j < rawSubtitles.length && rawSubtitles[j].start < currentTime + 60; j++) {
                 if (!processedSubtitles.current[j]) {
-                    q.push(j);
-                     subs.push(rawSubtitles[j]);
-                     // 一時的にprocessedSubtitlesをrawSubtitlesにする
-                     processedSubtitles.current[j] = {
+                    indexes_to_process.push(j);
+                    subs_to_process.push(rawSubtitles[j]);
+                    // Temporarily fill to prevent re-processing
+                    processedSubtitles.current[j] = {
                         text: [{
                             content: rawSubtitles[j].text,
                             meaning: ""
                         }],
                         start: rawSubtitles[j].start,
                         duration: rawSubtitles[j].duration
-                     };
+                    };
                 }
             }
 
-            if (flag) {
-                procSubtitles(subs).then((response) => {
-                    response.subtitles.map((s, i) => {
-                        processedSubtitles.current[q[i]] = s;
-                    })
+            if (subs_to_process.length > 0) {
+                pollingIndexes.current = indexes_to_process;
+                procSubtitles(subs_to_process).then((response) => {
+                    if (response.result === "success") {
+                        setProcessingJobId(response.job_id);
+                    }
                 });
             }
         }, 50);
-        return ()=> clearTimeout(id);
-    }, [playerRef.current, rawSubtitles])
+        return () => clearInterval(id);
+    }, [playerRef.current, rawSubtitles]);
+
     const handleAddToFlashcard = async () => {
         if (selectedWord) {
-        const response = await createFlashcard(selectedWord);
+            const response = await createFlashcard(selectedWord);
             if (response.result === "success") {
-            mutate();
+                mutateFlashcards();
+            }
         }
-    }
     };
 
-   const handleDeleteFromFlashcard = () => {
-if (selectedWord && flashcardId) {
-         deleteFlashcard(flashcardId);
-            mutate();
+    const handleDeleteFromFlashcard = () => {
+        if (selectedWord && flashcardId) {
+            deleteFlashcard(flashcardId);
+            mutateFlashcards();
         }
     };
 
@@ -131,13 +178,13 @@ if (selectedWord && flashcardId) {
 
             {isLoading && <p>Loading...</p>}
             {error && <p>Error</p>}
-            
+
             <div className="h-[100px]">
-                {subtitle.map((s, i) => <Subtitle subtitle={s} key={i} />)}    
+                {subtitle.map((s, i) => <Subtitle subtitle={s} key={i} />)}
             </div>
 
             {selectedWord && (flashcardId ? <p className="text-sm text-blue-200 hover:underline" onClick={handleDeleteFromFlashcard}>{selectedWord}を単語帳から削除</p> : <p className="text-sm text-blue-200 hover:underline" onClick={handleAddToFlashcard}>{selectedWord}を単語帳に追加</p>)}
-            {dict.map((word, index) => <Dict word={word} key={index} />)}
+            {dict && dict.map((word, index) => <Dict word={word} key={index} />)}
         </div>
     );
 }
