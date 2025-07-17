@@ -1,8 +1,10 @@
 import { DictEntry } from "./dict";
 
-export type CommonResponse = {
-    result: "success" | "failed";
-    error?: string;
+export type CommonResponse<T> = ({
+    result: "success"
+} & T) | {
+    result: "failed";
+    error: string;
 };
 
 export type LazyResponse = {
@@ -25,28 +27,39 @@ export type Subtitle = {
     duration: number
 }
 
-export type GetSubtitlesResponse = 
-    {
+export type GetSubtitlesResponse = CommonResponse<{
         subtitles: RawSubtitle[]
-    } & CommonResponse;
+    }>;
 
 export type RegisterResponse = {
     user: {
         id: number;
         username: string;
     };
-} & CommonResponse;
+} & CommonResponse<{
+    user: {
+        id: number;
+        username: string;
+    };
+}>;
 
 export type LoginResponse = {
     token: string;
-} & CommonResponse;
+} & CommonResponse<{
+    token: string;
+}>;
 
 export type MeResponse = {
     user: {
         id: number;
         username: string;
     };
-} & CommonResponse;
+} & CommonResponse<{
+    user: {
+        id: number;
+        username: string;
+    };
+}>;
 
 export type Flashcard = {
     id: number;
@@ -55,14 +68,20 @@ export type Flashcard = {
 
 export type FlashcardResponse = {
     flashcard: Flashcard;
-} & CommonResponse;
+} & CommonResponse<{
+    flashcard: Flashcard;
+}>;
 
 export type FlashcardsResponse = {
     flashcards: Flashcard[];
-} & CommonResponse;
+} & CommonResponse<{
+    flashcards: Flashcard[];
+}>;
 
 export type ProcSubtitlesResponse = {
     subtitles: Subtitle[]
 } & LazyResponse;
 
-export type GetDictResponse = {dict: DictEntry} & CommonResponse;
+export type GetDictResponse = {dict: DictEntry} & CommonResponse<{
+    dict: DictEntry;
+}>;

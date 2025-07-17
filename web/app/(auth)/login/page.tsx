@@ -4,7 +4,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { login as loginApi } from "@/services/api";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import Input from "@/components/base/input";
+import Button from "@/components/base/button";
+import Link from "next/link";
 
 const schema = z.object({
     username: z.string().min(1).max(255),
@@ -13,8 +15,7 @@ const schema = z.object({
 
 export default function LoginPage() {
     const router = useRouter();
-    const [error, setError] = useState("");
-    const {register, handleSubmit} = useForm({
+    const {register, handleSubmit, formState: {errors}, setError} = useForm({
         resolver: zodResolver(schema),
     });
 
@@ -23,21 +24,27 @@ export default function LoginPage() {
             if (response.result === "success") {
                 localStorage.setItem("token", response.token);
                 router.push("/");
-            } else {
-                setError(response?.error ?? "Unknown error");
             }
+        }).catch(error => {
+            setError("root", {message: error.response.data.error});
         });
     }
 
     return (
-        <div>
-            <h1>Login</h1>
-            <form onSubmit={handleSubmit(onSubmit)}>
-                <input type="text" placeholder="Username" {...register("username")} />
-                <input type="password" placeholder="Password" {...register("password")} />
-                <button type="submit">Login</button>
+        <div className="flex flex-col gap-y-10 items-center justify-center h-screen mx-auto w-sm">
+            <form onSubmit={handleSubmit(onSubmit)} className="w-full gap-y-2 flex flex-col">
+                <h1 className="text-2xl font-bold text-primary text-center">Login</h1>
+                <div className="flex flex-col w-full">
+                    <Input type="text" placeholder="tokushige" {...register("username")} label="Username" error={errors.root?.message}/>
+                </div>
+                <div className="flex flex-col w-full">
+                    <Input type="password" placeholder="Password" {...register("password")} label="Password" error={errors.root?.message}/>
+                </div>
+                <Button type="submit" className="mt-2">Login</Button>
+                <Link href="/register">
+                    <Button className="border-none hover:underline hover:border-2 hover:text-primary">Register</Button>
+                </Link>
             </form>
-            {error && <p>{error}</p>}
-        </div>
+        </div>  
     );
 }

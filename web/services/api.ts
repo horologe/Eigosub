@@ -24,7 +24,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use((response) => {
     return response;
 }, (error) => {
-    if (error.response.status === 401) {
+    if (error.response.status === 401 && location.pathname !== "/login") {
         localStorage.removeItem("token");
         location.href = "/login";
     }
@@ -50,7 +50,7 @@ export const login = async (username: string, password: string): Promise<LoginRe
     return response.data;
 };
 
-export const logout = async (): Promise<CommonResponse> => {
+export const logout = async (): Promise<CommonResponse<{}>> => {
     const response = await api.post(`/auth/logout`);
     return response.data;
 };
@@ -60,7 +60,7 @@ export const me = async (): Promise<MeResponse> => {
     return response.data;
 };
 
-export const getCsrfCookie = async (): Promise<CommonResponse> => {
+export const getCsrfCookie = async (): Promise<CommonResponse<{}>> => {
     const response = await api.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/sanctum/csrf-cookie`);
     return response.data;
 };
