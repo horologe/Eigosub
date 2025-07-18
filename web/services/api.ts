@@ -40,6 +40,7 @@ export const getSubtitles = async (videoId: string): Promise<GetSubtitlesRespons
 };
 
 export const register = async (username: string, password: string): Promise<RegisterResponse> => {
+    await getCsrfCookie();
     const response = await api.post(`/auth/register`, { username, password });
     return response.data;
 };
