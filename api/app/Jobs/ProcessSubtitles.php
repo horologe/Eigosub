@@ -43,7 +43,15 @@ class ProcessSubtitles implements ShouldQueue
             }
 
             $prompt = <<<EOF
-            添付されたJSONについて、基本的に全てそのまま書き出してください。それぞれの字幕について、イディオムごとに区切り、contentには字幕を、meaningにはイディオムの意味で、短く簡潔に書いてください。また、イディオムでない箇所はmeaningを空文字で出力してください。次はturn on the lightの例です。the lightの前にスペースが入っていることに注意してください。
+            添付されたJSONについて、基本的に全てそのまま書き出してください。
+            複雑な英語の表現、例えばturn onやtalk intoなど一つの単語を辞書で
+            引いただけじゃ意味わからないフレーズ、pice of cakeなどの慣用表現
+            があれば意味を書き出してください。contentには字幕を、
+            meaningには複雑な英語表現の意味で、短く簡潔に書いてください。また、
+            複雑な英語表現でない箇所はmeaningを空文字で出力してください。
+            次はturn on the lightの例です。
+            the lightの前にスペースが入っていることに注意してください。
+            これは、結果のcontentを全てそのまま連結すると元の文になるようにするためです。
 
             {
                 "text": [

@@ -7,9 +7,10 @@ export type ButtonProps = {
     className?: string,
     onClick?: () => void,
     variant: "primary" | "text",
+    disabled?: boolean,
 } & React.ButtonHTMLAttributes<HTMLButtonElement>
 
-export default function Button({children, className, variant, ...props}: ButtonProps) {
+export default function Button({children, className, variant, disabled, ...props}: ButtonProps) {
     const ref = useRef<HTMLButtonElement>(null)
 
     const variantClass = {
@@ -23,6 +24,6 @@ export default function Button({children, className, variant, ...props}: ButtonP
                 ref.current.style.setProperty("--x", `${e.clientX - ref.current.getBoundingClientRect().left}px`)
                 ref.current.style.setProperty("--y", `${e.clientY - ref.current.getBoundingClientRect().top}px`)
             }
-        }} className={twMerge("w-full p-2", variantClass, className)}><span>{children}</span></button>
+        }} className={twMerge("w-full p-2", variantClass, className, disabled && "opacity-50")}><span>{children}</span></button>
     );
 }
