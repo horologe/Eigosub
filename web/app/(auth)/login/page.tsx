@@ -40,9 +40,9 @@ export default function LoginPage() {
                 <div className="flex flex-col w-full">
                     <Input type="password" placeholder="Password" {...register("password")} label="Password" error={errors.root?.message}/>
                 </div>
-                <Button type="submit" className="mt-2">Login</Button>
+                <Button type="submit" className="mt-2" variant="primary">Login</Button>
                 <Link href="/register">
-                    <Button className="border-none hover:underline hover:border-2 hover:text-primary">Register</Button>
+                    <Button variant="text">Register</Button>
                 </Link>
             </form>
         </div>  

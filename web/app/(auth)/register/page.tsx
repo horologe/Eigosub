@@ -43,9 +43,9 @@ export default function RegisterPage() {
                 <div className="flex flex-col w-full">
                     <Input type="password" placeholder="Password" {...register("password")} label="Password" error={errors.password?.message}/>
                 </div>
-                <Button type="submit" className="mt-2">Register</Button>
+                <Button type="submit" className="mt-2" variant="primary">Register</Button>
                 <Link href="/login">
-                    <Button className="border-none hover:underline hover:border-2 hover:text-primary mt-2">Login</Button>
+                    <Button variant="text">Login</Button>
                 </Link>
             </form>
         </div>  

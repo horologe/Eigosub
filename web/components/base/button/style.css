@@ -1,0 +1,53 @@
+.primary-btn:hover::before {
+    width: calc(384px * 2);
+    height: calc(384px * 2);
+
+}
+
+.primary-btn::before {
+    background-color: #ff9000;
+
+    content: '';
+    position: absolute;
+    top: var(--y);
+    left: var(--x);
+    
+    /* 初期状態（左上で非表示） */
+    width: 0;
+    height: 0;
+    
+    border-radius: 50%; /* 円形にする */
+    
+    /* アニメーションの設定 */
+    transition: width 0.4s ease-out, height 0.4s ease-out;
+    
+    /* 円の中心をボタンの左上隅に合わせる */
+    transform: translate(-50%, -50%);
+    z-index: -1; /* テキストの背面に配置 */
+}
+
+.primary-btn {
+    position: relative;
+    cursor: pointer;
+    margin: 0px;
+    /* border: medium; */
+    /* height: 32px; */
+    /* line-height: 32px; */
+    /* font-size: 14px; */
+    /* font-weight: 500; */
+    color: white;
+    transition: 0.3s;
+    background-color: transparent;
+    /* letter-spacing: 0.1em; */
+    vertical-align: middle;
+    z-index: 1;
+    overflow: hidden;
+
+    transition: box-shadow 0.3s ease-out;
+}
+
+.primary-btn > span {
+    order: 2;
+    z-index: 1;
+    position: relative;
+}
