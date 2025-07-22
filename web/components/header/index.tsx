@@ -32,7 +32,7 @@ export default function Header() {
     }, []);
 
     return (
-        <header className="flex justify-between items-center p-4 w-100% h-[70px] border-b border-primary">
+        <header className="flex justify-between items-center p-4 w-100% h-[70px] border-b border-primary mb-2">
             <div className="flex items-center gap-2">
                 <Link href="/"><Image src="/logo.png" alt="Eigosub" width={384/3} height={140/3} className="h-auto w-auto"/></Link>
             </div>
