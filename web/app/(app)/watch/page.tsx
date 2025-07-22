@@ -12,11 +12,11 @@ import useSWR from "swr";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function VideoPage() {
-    const videoid = useSearchParams().get("v") || "z4K2F_OALPQ";
+    const videoid = useSearchParams().get("v") as string;
 
     const [subtitle, setSubtitle] = useState<SubtitleType[]>([]);
     const { selectedWord } = useSelectedWordStore();
-    const { data: dict, error: dictError } = useSWR("dict-" + selectedWord, () => getDict(selectedWord).then((response) => response.dict));
+    const { data: dict, error: dictError, isLoading: dictLoading } = useSWR("dict-" + selectedWord, () => getDict(selectedWord).then((response) => response.dict));
     const { data: flashcards, mutate: mutateFlashcards } = useSWR("flashcards", getFlashcards);
     const flashcardId = flashcards?.flashcards.find((flashcard) => flashcard.content === selectedWord)?.id;
 
@@ -27,8 +27,14 @@ export default function VideoPage() {
 
     const playerRef = useRef<YouTubePlayer>(null);
 
+    const [playerError, setPlayerError] = useState<string | null>(null);
+
     const onPlayerReady = (event: any) => {
         playerRef.current = event.target;
+    }
+
+    const onPlayerError = (event: any) => {
+        setPlayerError(event.data);
     }
 
     useEffect(() => {
@@ -171,20 +177,29 @@ export default function VideoPage() {
     };
 
     return (
-        <div>
-            <div className="flex flex-col gap-2"></div>
+        <div className="lg:flex lg:flex-row lg:gap-4 w-full lg:w-5/6 mx-auto">
+            <div className="lg:max-w-1/2 w-full">
+                {playerError && <p>Failed to load video. Check if the video is available.</p>}
+                <YouTube videoId={videoid} onReady={onPlayerReady} onError={onPlayerError} className="w-full aspect-video" opts={{
+                    width: "100%",
+                    height: "100%",
+                    playerVars: {
+                        autoplay: 1,
+                    }
+                }}/>
 
-            <YouTube videoId={videoid} onReady={onPlayerReady} />
-
-            {isLoading && <p>Loading...</p>}
-            {error && <p>Error</p>}
-
-            <div className="h-[100px]">
-                {subtitle.map((s, i) => <Subtitle subtitle={s} key={i} />)}
+                {isLoading && <p>Loading subtitles...</p>}
+                {error && <p>Failed to load subtitles</p>}
+                <div className="h-[100px]">
+                    {subtitle.map((s, i) => <Subtitle subtitle={s} key={i} />)}
+                </div>
             </div>
 
-            {selectedWord && (flashcardId ? <p className="text-sm text-blue-200 hover:underline" onClick={handleDeleteFromFlashcard}>{selectedWord}を単語帳から削除</p> : <p className="text-sm text-blue-200 hover:underline" onClick={handleAddToFlashcard}>{selectedWord}を単語帳に追加</p>)}
-            {dict && dict.map((word, index) => <Dict word={word} key={index} />)}
+            <div className="lg:max-w-1/2 w-full">
+
+                {selectedWord && (flashcardId ? <p className="text-sm text-blue-200 hover:underline" onClick={handleDeleteFromFlashcard}>{selectedWord}を単語帳から削除</p> : <p className="text-sm text-blue-200 hover:underline" onClick={handleAddToFlashcard}>{selectedWord}を単語帳に追加</p>)}
+                {dict && dict.map((word, index) => <Dict word={word} key={index} />)}
+            </div>
         </div>
     );
 }
