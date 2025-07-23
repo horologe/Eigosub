@@ -38,7 +38,7 @@ export default function RegisterPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="w-full gap-y-2 flex flex-col">
                 <h1 className="text-2xl font-bold text-primary text-center">Register</h1>
                 <div className="flex flex-col w-full">
-                    <Input type="text" placeholder="tokushige" {...register("username")} label="Username" error={errors.username?.message}/>
+                    <Input type="text" placeholder="username" {...register("username")} label="Username" error={errors.username?.message}/>
                 </div>
                 <div className="flex flex-col w-full">
                     <Input type="password" placeholder="Password" {...register("password")} label="Password" error={errors.password?.message}/>
