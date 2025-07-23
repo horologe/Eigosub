@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Flashcard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Gate;
 
 class FlashcardController extends Controller
 {
@@ -13,6 +14,7 @@ class FlashcardController extends Controller
      */
     public function index(Request $request)
     {
+        Gate::authorize('viewAny', Flashcard::class);
         $flashcards = $request->user()->flashcards;
         return response()->json([
             "flashcards" => $flashcards,
@@ -25,6 +27,7 @@ class FlashcardController extends Controller
      */
     public function store(Request $request)
     {
+        Gate::authorize('create', Flashcard::class);
         $flashcard = $request->user()->flashcards()->create($request->all());
         return response()->json([
             "flashcard" => $flashcard,
@@ -37,6 +40,7 @@ class FlashcardController extends Controller
      */
     public function show(Flashcard $flashcard)
     {
+        Gate::authorize('view', $flashcard);
         return response()->json([
             "flashcard" => $flashcard,
             "result" => "success",
@@ -48,6 +52,7 @@ class FlashcardController extends Controller
      */
     public function update(Request $request, Flashcard $flashcard)
     {
+        Gate::authorize('update', $flashcard);
         $flashcard->update($request->all());
         return response()->json([
             "flashcard" => $flashcard,
@@ -60,13 +65,7 @@ class FlashcardController extends Controller
      */
     public function destroy(Request $request, Flashcard $flashcard)
     {   
-        if ($flashcard->user_id !== $request->user()->id) {
-            return response()->json([
-                "result" => "failed",
-                "error" => "Unauthorized",
-            ], 403);
-        }
-        
+        Gate::authorize('delete', $flashcard);
         $flashcard->delete();
         return response()->json([
             "result" => "success",
