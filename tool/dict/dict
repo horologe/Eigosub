@@ -1,0 +1,12 @@
+#!/usr/bin/env python3
+import os
+import tkrzw
+import sys
+
+try:
+    f = tkrzw.DBM()
+    f.Open(os.path.dirname(__file__) + "/union-body.tkh", False)
+    data = f.Get(sys.argv[1].lower()).decode()
+    print(data)
+except Exception as e:
+    print([])

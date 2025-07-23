@@ -1,0 +1,7 @@
+tkrzw*
+.venv
+.python-version
+pyproject.toml
+uv.lock
+main.py
+union*
